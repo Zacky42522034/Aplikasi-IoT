@@ -1,0 +1,40 @@
+/* Error Page */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background-color: white;
+      padding: 1rem;
+    }
+    
+    .error-card {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-gap: 1rem;
+      width: 100%;
+      max-width: 1200px;
+    }
+    
+    @media (min-width: 768px) {
+      .error-card {
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+      }
+    }
+    
+    .home-button {
+      position: relative;
+    }
+    
+    .home-button:hover {
+      box-shadow: 0 10px 20px rgba(93, 63, 211, 0.2);
+    }
+    
+    .home-button:hover:before {
+      left: 100%;
+    }
+
+    

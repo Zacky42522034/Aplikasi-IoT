@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perangkat - IoT Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="res/style/styles.css" rel="stylesheet">
+  <style>
+    /* Grid untuk perangkat - lebih responsif */
+    .grid-devices {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    
+    /* Perbaikan untuk layar kecil */
+    @media (max-width: 640px) {
+      .grid-devices {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Perbaikan untuk tablet */
+    @media (min-width: 641px) and (max-width: 768px) {
+      .grid-devices {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    .device-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .device-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Perbaikan sidebar */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed; 
+        z-index: 50;
+        height: 100vh;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      
+      /* Overlay background saat sidebar terbuka */
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+      
+      .sidebar-overlay.active {
+        display: block;
+      }
+    }
+    
+    /* Penyesuaian tabel untuk mobile */
+    @media (max-width: 640px) {
+      .responsive-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* Card view untuk tabel di mobile */
+      .mobile-card-view tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      }
+      
+      .mobile-card-view tbody td {
+        display: flex;
+        justify-content: space-between;
+        text-align: right;
+        padding: 0.5rem 0;
+        border: none;
+      }
+      
+      .mobile-card-view tbody td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-align: left;
+      }
+      
+      .mobile-card-view thead {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Overlay background untuk mobile -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+    
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar bg-indigo-700 text-white w-64 md:flex flex-col">
+      <div class="p-4 flex items-center border-b border-indigo-600">
+        <i data-feather="cpu" class="mr-2"></i>
+        <h1 class="text-xl font-bold">IoT Dashboard</h1>
+      </div>
+      <nav class="flex-1 overflow-y-auto py-4">
+        <ul>
+          <li class="mb-1">
+            <a href="index.html" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
+              <i data-feather="grid" class="mr-3 h-5 w-5"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="mb-1">
+            <a href="devices.html" class="flex items-center py-2 px-4 text-white bg-indigo-800 rounded-lg">
+              <i data-feather="hard-drive" class="mr-3 h-5 w-5"></i>
+              <span>Perangkat</span>
+            </a>
+          </li>
+          <li class="mb-1">
+            <a href="pairing.html" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
+              <i data-feather="link" class="mr-3 h-5 w-5"></i>
+              <span>Pairing Perangkat</span>
+            </a>
+          </li>
+          <li class="mb-1">
+            <a href="error.html" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
+              <i data-feather="bar-chart-2" class="mr-3 h-5 w-5"></i>
+              <span>Analisis</span>
+            </a>
+          </li>
+          <li class="mb-1">
+            <a href="error.html" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
+              <i data-feather="settings" class="mr-3 h-5 w-5"></i>
+              <span>Pengaturan</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="p-4 border-t border-indigo-600">
+        <a href="Auth/index.html" class="flex items-center text-white">
+          <img src="Assets/user.png" alt="Profile" class="rounded-full h-8 w-8 mr-2" />
+          <span>User Profile</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Top Navbar -->
+      <header class="bg-white shadow-sm">
+        <div class="flex items-center justify-between p-4">
+          <!-- Mobile Menu Toggle -->
+          <button id="menu-toggle" class="md:hidden text-gray-600">
+            <i data-feather="menu"></i>
+          </button>
+          
+          <div class="flex items-center">
+            <div class="relative">
+              <input type="text" placeholder="Cari perangkat..." class="w-64 sm:w-64 xs:w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <i data-feather="search" class="absolute right-3 top-2.5 text-gray-400"></i>
+            </div>
+          </div>
+          
+          <div class="flex items-center space-x-4">
+            <button class="text-gray-600 hover:text-gray-800">
+              <i data-feather="bell"></i>
+            </button>
+            <button class="text-gray-600 hover:text-gray-800">
+              <i data-feather="help-circle"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto p-4 bg-gray-100">
+        <div id="devices-section">
+          <div class="flex flex-wrap justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2 sm:mb-0">Manajemen Perangkat</h2>
+            <div class="flex">
+              <a href="pairing.html" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-300 flex items-center">
+                <i data-feather="plus" class="mr-2 h-4 w-4"></i>
+                Tambah Perangkat
+              </a>
+            </div>
+          </div>
+          
+          <!-- Filters and Sorting -->
+          <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label for="filter-type" class="block text-sm font-medium text-gray-700 mb-1">Tipe Perangkat</label>
+                <select id="filter-type" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">Semua Tipe</option>
+                  <option value="sensor">Sensor</option>
+                  <option value="control">Kontrol</option>
+                  <option value="gateway">Gateway</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="filter-status" class="block text-sm font-medium text-gray-700 mb-1">Status Perangkat</label>
+                <select id="filter-status" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">Semua Status</option>
+                  <option value="online">Online</option>
+                  <option value="offline">Offline</option>
+                  <option value="warning">Peringatan</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="filter-location" class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
+                <select id="filter-location" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">Semua Lokasi</option>
+                  <option value="living-room">Ruang Tamu</option>
+                  <option value="bedroom">Kamar Tidur</option>
+                  <option value="kitchen">Dapur</option>
+                  <option value="office">Ruang Kerja</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="sort-by" class="block text-sm font-medium text-gray-700 mb-1">Urutkan</label>
+                <select id="sort-by" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="name-asc">Nama (A-Z)</option>
+                  <option value="name-desc">Nama (Z-A)</option>
+                  <option value="last-active">Terakhir Aktif</option>
+                  <option value="status">Status</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Devices List -->
+          <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+            <div class="p-4 border-b border-gray-200 flex flex-wrap justify-between items-center">
+              <h3 class="text-lg font-medium mb-2 sm:mb-0">Daftar Perangkat</h3>
+              <span class="text-sm text-gray-500">Menampilkan 12 perangkat</span>
+            </div>
+            
+            <div class="responsive-table">
+              <table class="w-full divide-y divide-gray-200 mobile-card-view">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perangkat</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Perangkat</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terakhir Aktif</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tindakan</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <!-- Device Row 1 -->
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Perangkat">
+                      <div class="flex items-center">
+                        <div class="bg-green-100 p-2 rounded-full">
+                          <i data-feather="thermometer" class="text-green-600 h-5 w-5"></i>
+                        </div>
+                        <div class="ml-3">
+                          <div class="text-sm font-medium text-gray-900">Sensor Suhu Ruang Tamu</div>
+                          <div class="text-xs text-gray-500">Sensor</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="ID Perangkat">
+                      <div class="text-sm text-gray-900">SEN-TH-001</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Lokasi">
+                      <div class="text-sm text-gray-900">Ruang Tamu</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Status">
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        Online
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-label="Terakhir Aktif">
+                      1 menit yang lalu
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Tindakan">
+                      <a href="device-detail.html?id=SEN-TH-001" class="text-indigo-600 hover:text-indigo-900 mr-3">Detail</a>
+                      <a href="#" class="text-gray-600 hover:text-gray-900">Edit</a>
+                    </td>
+                  </tr>
+                  
+                  <!-- Device Row 2 -->
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Perangkat">
+                      <div class="flex items-center">
+                        <div class="bg-blue-100 p-2 rounded-full">
+                          <i data-feather="droplet" class="text-blue-600 h-5 w-5"></i>
+                        </div>
+                        <div class="ml-3">
+                          <div class="text-sm font-medium text-gray-900">Sensor Kualitas Air</div>
+                          <div class="text-xs text-gray-500">Sensor</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="ID Perangkat">
+                      <div class="text-sm text-gray-900">SEN-WQ-001</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Lokasi">
+                      <div class="text-sm text-gray-900">Dapur</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Status">
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        Online
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-label="Terakhir Aktif">
+                      5 menit yang lalu
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Tindakan">
+                      <a href="device-detail.html?id=SEN-WQ-001" class="text-indigo-600 hover:text-indigo-900 mr-3">Detail</a>
+                      <a href="#" class="text-gray-600 hover:text-gray-900">Edit</a>
+                    </td>
+                  </tr>
+                  
+                  <!-- Device Row 3 -->
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Perangkat">
+                      <div class="flex items-center">
+                        <div class="bg-yellow-100 p-2 rounded-full">
+                          <i data-feather="sun" class="text-yellow-600 h-5 w-5"></i>
+                        </div>
+                        <div class="ml-3">
+                          <div class="text-sm font-medium text-gray-900">Smart Light Kamar</div>
+                          <div class="text-xs text-gray-500">Kontrol</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="ID Perangkat">
+                      <div class="text-sm text-gray-900">CTR-LT-001</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Lokasi">
+                      <div class="text-sm text-gray-900">Kamar Tidur</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Status">
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        Online
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-label="Terakhir Aktif">
+                      Just now
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Tindakan">
+                      <a href="device-detail.html?id=CTR-LT-001" class="text-indigo-600 hover:text-indigo-900 mr-3">Detail</a>
+                      <a href="#" class="text-gray-600 hover:text-gray-900">Edit</a>
+                    </td>
+                  </tr>
+                  
+                  <!-- Device Row 4 -->
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Perangkat">
+                      <div class="flex items-center">
+                        <div class="bg-red-100 p-2 rounded-full">
+                          <i data-feather="wifi" class="text-red-600 h-5 w-5"></i>
+                        </div>
+                        <div class="ml-3">
+                          <div class="text-sm font-medium text-gray-900">Smart AC Ruang Kerja</div>
+                          <div class="text-xs text-gray-500">Kontrol</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="ID Perangkat">
+                      <div class="text-sm text-gray-900">CTR-AC-001</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Lokasi">
+                      <div class="text-sm text-gray-900">Ruang Kerja</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Status">
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        Offline
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-label="Terakhir Aktif">
+                      2 jam yang lalu
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Tindakan">
+                      <a href="device-detail.html?id=CTR-AC-001" class="text-indigo-600 hover:text-indigo-900 mr-3">Detail</a>
+                      <a href="#" class="text-gray-600 hover:text-gray-900">Edit</a>
+                    </td>
+                  </tr>
+                  
+                  <!-- Device Row 5 -->
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Perangkat">
+                      <div class="flex items-center">
+                        <div class="bg-purple-100 p-2 rounded-full">
+                          <i data-feather="camera" class="text-purple-600 h-5 w-5"></i>
+                        </div>
+                        <div class="ml-3">
+                          <div class="text-sm font-medium text-gray-900">CCTV Pintu Depan</div>
+                          <div class="text-xs text-gray-500">Sensor</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="ID Perangkat">
+                      <div class="text-sm text-gray-900">SEN-CC-001</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Lokasi">
+                      <div class="text-sm text-gray-900">Teras</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap" data-label="Status">
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        Peringatan
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" data-label="Terakhir Aktif">
+                      15 menit yang lalu
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Tindakan">
+                      <a href="device-detail.html?id=SEN-CC-001" class="text-indigo-600 hover:text-indigo-900 mr-3">Detail</a>
+                      <a href="#" class="text-gray-600 hover:text-gray-900">Edit</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.28.0/feather.min.js"></script>
+  <script>
+    // Inisialisasi ikon Feather
+    document.addEventListener('DOMContentLoaded', function() {
+      feather.replace();
+      
+      // Toggle sidebar untuk mobile
+      const menuToggle = document.getElementById('menu-toggle');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebar-overlay');
+      
+      if (menuToggle && sidebar && sidebarOverlay) {
+        menuToggle.addEventListener('click', function() {
+          sidebar.classList.toggle('open');
+          sidebarOverlay.classList.toggle('active');
+        });
+        
+        sidebarOverlay.addEventListener('click', function() {
+          sidebar.classList.remove('open');
+          sidebarOverlay.classList.remove('active');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
