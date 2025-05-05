@@ -145,13 +145,13 @@
             </a>
           </li>
           <li class="mb-1">
-            <a href="#" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
+            <a href="/analisis" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
               <i data-feather="bar-chart-2" class="mr-3 h-5 w-5"></i>
               <span>Analisis</span>
             </a>
           </li>
           <li class="mb-1">
-            <a href="#" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
+            <a href="/pengaturan" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
               <i data-feather="settings" class="mr-3 h-5 w-5"></i>
               <span>Pengaturan</span>
             </a>
@@ -159,9 +159,10 @@
         </ul>
       </nav>
       <div class="p-4 border-t border-indigo-600">
-        <a href="Auth/index.html" class="flex items-center text-white">
-          <img src="Assets/user.png" alt="Profile" class="rounded-full h-8 w-8 mr-2" />
-          <span>User Profile</span>
+        <a href="#" class="flex items-center text-white">
+          <img src="{{ asset('IOTDashboard/Assets/user.png') }}" alt="Profile" class="rounded-full h-8 w-8 mr-2" />
+          <span>{{ auth()->user()->username }}</span>
+
         </a>
       </div>
     </aside>
@@ -178,18 +179,30 @@
           
           <div class="flex items-center">
             <div class="relative">
-              <input type="text" placeholder="Cari perangkat..." class="w-64 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <i data-feather="search" class="absolute right-3 top-2.5 text-gray-400"></i>
+                <form action="/devices" method="GET">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        placeholder="Cari Perangkat" 
+                        class="w-64 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        value="{{ request('search') }}" />
+                    <button type="submit" class="absolute right-3 top-2.5 text-gray-400">
+                        <i data-feather="search"></i>
+                    </button>
+                </form>
             </div>
-          </div>
+        </div>
+        
           
           <div class="flex items-center space-x-4">
-            <button class="text-gray-600 hover:text-gray-800">
-              <i data-feather="bell"></i>
-            </button>
-            <button class="text-gray-600 hover:text-gray-800">
+            
+            <a id="infoApp" class="text-gray-600 hover:text-gray-800">
               <i data-feather="help-circle"></i>
-            </button>
+            </a>
+
+            <a id="logoutButton" type="button" class="text-gray-600 hover:text-gray-800">
+              <i data-feather="log-out"></i>
+            </a>
           </div>
         </div>
       </header>
@@ -288,14 +301,15 @@
                     } elseif ($lastUpdated->isYesterday()) {
                         $lastActive = "Aktif kemarin";
                     } elseif ($diffInDays < 7) {
-                        $lastActive = "Aktif {$diffInDays} hari yang lalu";
+                        $lastActive = "Aktif " . round($diffInDays) . " hari yang lalu"; // Pembulatan hari
                     } elseif ($diffInDays < 30) {
-                        $lastActive = "Aktif {$diffInWeeks} minggu yang lalu";
+                        $lastActive = "Aktif " . round($diffInWeeks) . " minggu yang lalu"; // Pembulatan minggu
                     } else {
                         $lastActive = "Aktif pada " . $lastUpdated->format('d-m-Y');
                     }
                 }
             @endphp
+            
             
             {{-- Tampilkan badge status --}}
             @if ($isOnline)
@@ -311,16 +325,64 @@
             {{-- Last active info --}}
      
               
-            
+             
               </div>
               <div class="mb-4">
                 <div class="flex justify-between mb-1">
-                  <span class="text-sm font-medium">Suhu</span>
-                  <span class="text-sm font-medium">{{ $data1 }}</span>
+                  <span id="label-suhu-{{ $device->id }}" class="text-sm font-medium">
+                    <!-- Label akan ditampilkan sesuai dengan yang ada di localStorage, jika tidak ada, tampilkan default "Suhu" -->
+                    <script>
+                        // Pastikan DOM telah dimuat sebelum menjalankan script
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const deviceId = "{{ $device->id }}";  // ID perangkat dari database
+                            const labelKey = `label-suhu-${deviceId}`;  // Key untuk label perangkat
+                            const labelValue = localStorage.getItem(labelKey);  // Ambil label dari localStorage
+                
+                            const labelElement = document.getElementById(`label-suhu-${deviceId}`);
+                
+                            // Jika ada label di localStorage, perbarui elemen dengan ID perangkat
+                            if (labelValue) {
+                                labelElement.innerText = labelValue;
+                            } else {
+                                labelElement.innerText = 'Suhu';  // Tampilkan default jika belum ada label di localStorage
+                            }
+                        });
+                    </script>
+                </span>
+                
+    
+                  <span class="text-sm font-medium">{{ $deviceData[$device->id]['data1'] ?? 'N/A' }}</span>
                 </div>
                 <div class="flex justify-between mb-1">
-                  <span class="text-sm font-medium">Kelembaban</span>
-                  <span class="text-sm font-medium">{{ $data2 }}</span>
+                  <span id="label-kelembaban-{{ $device->id }}" class="text-sm font-medium"></span>
+
+                  <script>
+                      document.addEventListener('DOMContentLoaded', function() {
+                          const deviceId = "{{ $device->id }}";
+                  
+                          // Suhu
+                          const suhuLabelKey = `label-suhu-${deviceId}`;
+                          const suhuLabelValue = localStorage.getItem(suhuLabelKey);
+                          const suhuLabelElement = document.getElementById(`label-suhu-${deviceId}`);
+                          if (suhuLabelValue) {
+                              suhuLabelElement.innerText = suhuLabelValue;
+                          } else {
+                              suhuLabelElement.innerText = 'Suhu';
+                          }
+                  
+                          // Kelembaban
+                          const kelembabanLabelKey = `label-kelembaban-${deviceId}`;
+                          const kelembabanLabelValue = localStorage.getItem(kelembabanLabelKey);
+                          const kelembabanLabelElement = document.getElementById(`label-kelembaban-${deviceId}`);
+                          if (kelembabanLabelValue) {
+                              kelembabanLabelElement.innerText = kelembabanLabelValue;
+                          } else {
+                              kelembabanLabelElement.innerText = 'Kelembaban';
+                          }
+                      });
+                  </script>
+                  
+                  <span class="text-sm font-medium">{{ $deviceData[$device->id]['data2'] ?? 'N/A' }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-sm font-medium">Update Terakhir</span>
@@ -335,10 +397,10 @@
                         $now = \Carbon\Carbon::now();
             
                         $diffInMinutes = (int) $lastUpdated->diffInMinutes($now);
-                        $diffInHours = $lastUpdated->diffInHours($now);
-                        $diffInDays = $lastUpdated->diffInDays($now);
+                        $diffInHours = (int) $lastUpdated->diffInHours($now);
+                        $diffInDays = (int) $lastUpdated->diffInDays($now);
                         $diffInWeeks = floor($diffInDays / 7);
-                        $diffInMonths = $lastUpdated->diffInMonths($now);
+                        $diffInMonths = (int) $lastUpdated->diffInMonths($now);
             
                         // Cek status online
                         if ($lastUpdated->isToday() && $diffInMinutes <= 5) {
@@ -471,44 +533,118 @@ if (deviceStatusCtx) {
       }
     });
   }
-
-// Initialize Data History Chart (for Device Detail Page)
-const dataHistoryCtx = document.getElementById('dataHistoryChart')?.getContext('2d');
-
-if (dataHistoryCtx) {
-  new Chart(dataHistoryCtx, {
-    type: 'line',
-    data: {
-      labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
-      datasets: [{
-        label: 'Suhu (°C)',
-        data: [24, 23, 25, 27, 28, 27, 26, 25],
-        borderColor: 'rgba(79, 70, 229, 1)',
-        backgroundColor: 'rgba(79, 70, 229, 0.1)',
-        tension: 0.4
-      }, {
-        label: 'Kelembaban (%)',
-        data: [60, 62, 60, 65, 58, 57, 59, 61],
-        borderColor: 'rgba(37, 99, 235, 1)',
-        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-        tension: 0.4
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top',
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    }
-  });
-}
   </script>
+
+  <script>
+    // online & offline counts
+  function updateDeviceStats() {
+    fetch("{{ route('dashboard') }}", {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // Ambil nilai baru dari halaman yang dimuat ulang secara siluman
+      const totalDevices = doc.querySelector('.stats-grid .bg-white:nth-child(1) .font-bold')?.textContent.trim();
+      const onlineCount = doc.querySelector('.stats-grid .bg-white:nth-child(2) .font-bold')?.textContent.trim();
+      const offlineCount = doc.querySelector('.stats-grid .bg-white:nth-child(3) .font-bold')?.textContent.trim();
+
+      // Update nilai di halaman saat ini
+      document.querySelector('.stats-grid .bg-white:nth-child(1) .font-bold').textContent = totalDevices;
+      document.querySelector('.stats-grid .bg-white:nth-child(2) .font-bold').textContent = onlineCount;
+      document.querySelector('.stats-grid .bg-white:nth-child(3) .font-bold').textContent = offlineCount;
+    });
+  }
+
+  setInterval(updateDeviceStats, 1000); // Update setiap 5 detik
+
+  </script>
+
+<script>
+  // card data realtime dashboard
+  function updateDeviceDataRealtime() {
+    fetch("{{ route('dashboard') }}", {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      const newDeviceBlocks = doc.querySelectorAll('.stats-grid ~ div .mb-4');
+      const currentDeviceBlocks = document.querySelectorAll('.stats-grid ~ div .mb-4');
+
+      currentDeviceBlocks.forEach((block, index) => {
+        const newBlock = newDeviceBlocks[index];
+        if (!newBlock) return;
+
+        // Update suhu dan kelembaban
+        const newSuhu = newBlock.querySelectorAll('span.text-sm.font-medium')[1]?.textContent.trim();
+        const newKelembaban = newBlock.querySelectorAll('span.text-sm.font-medium')[3]?.textContent.trim();
+        const newUpdateText = newBlock.querySelector('span.text-sm.text-gray-500')?.textContent.trim();
+
+        if (newSuhu) block.querySelectorAll('span.text-sm.font-medium')[1].textContent = newSuhu;
+        if (newKelembaban) block.querySelectorAll('span.text-sm.font-medium')[3].textContent = newKelembaban;
+        if (newUpdateText) block.querySelector('span.text-sm.text-gray-500').textContent = newUpdateText;
+
+        // Update badge status (online/offline)
+        const newBadge = newBlock.querySelector('span.bg-green-100, span.bg-red-100');
+        const currentBadge = block.querySelector('span.bg-green-100, span.bg-red-100');
+
+        if (newBadge && currentBadge) {
+          currentBadge.className = newBadge.className;
+          currentBadge.textContent = newBadge.textContent;
+        }
+      });
+    });
+  }
+
+  // Jalankan setiap 5 detik
+  setInterval(updateDeviceDataRealtime, 1000);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.getElementById('infoApp').addEventListener('click', function () {
+    Swal.fire({
+      title: 'Tentang Aplikasi',
+      html: `
+        <strong>Nama Aplikasi:</strong> Sistem Pemantauan IoT<br>
+        <strong>Versi:</strong> 1.0<br>
+        <strong>Dibuat oleh:</strong> Tim Pengembang PBL RPL<br>
+        <strong>Deskripsi:</strong> Aplikasi ini digunakan untuk memantau perangkat IoT secara real-time, 
+        termasuk data suhu, kelembaban, dan status perangkat.
+      `,
+      icon: 'info',
+      confirmButtonText: 'Tutup'
+    });
+  });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.getElementById('logoutButton').addEventListener('click', function (e) {
+    e.preventDefault(); // Cegah aksi langsung
+
+    Swal.fire({
+      title: 'Yakin ingin keluar?',
+      text: "Kamu akan keluar dari aplikasi.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya, Logout',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Redirect ke /logout
+        window.location.href = '/logout';
+      }
+    });
+  });
+</script>
+
+
+
 </body>
 </html>

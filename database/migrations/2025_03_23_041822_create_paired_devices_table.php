@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('paired_devices', function (Blueprint $table) {
             $table->id();
+            $table->foreignId("user_id")->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
             $table->string('name');
             $table->string('device_id')->unique(10);
             $table->string('category');

@@ -143,13 +143,13 @@
             </a>
           </li>
           <li class="mb-1">
-            <a href="#" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
+            <a href="/analisis" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
               <i data-feather="bar-chart-2" class="mr-3 h-5 w-5"></i>
               <span>Analisis</span>
             </a>
           </li>
           <li class="mb-1">
-            <a href="#" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
+            <a href="/pengaturan" class="flex items-center py-2 px-4 text-white hover:bg-indigo-800 rounded-lg">
               <i data-feather="settings" class="mr-3 h-5 w-5"></i>
               <span>Pengaturan</span>
             </a>
@@ -157,9 +157,10 @@
         </ul>
       </nav>
       <div class="p-4 border-t border-indigo-600">
-        <a href="Auth/index.html" class="flex items-center text-white">
-          <img src="Assets/user.png" alt="Profile" class="rounded-full h-8 w-8 mr-2" />
-          <span>User Profile</span>
+        <a href="#" class="flex items-center text-white">
+          <img src="{{ asset('IOTDashboard/Assets/user.png') }}" alt="Profile" class="rounded-full h-8 w-8 mr-2" />
+          <span>{{ auth()->user()->name }}</span>
+
         </a>
       </div>
     </aside>
@@ -176,18 +177,27 @@
           
           <div class="flex items-center">
             <div class="relative">
-              <input type="text" placeholder="Cari perangkat..." class="w-64 sm:w-64 xs:w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-              <i data-feather="search" class="absolute right-3 top-2.5 text-gray-400"></i>
+                <form action="/devices" method="GET">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        placeholder="Cari Perangkat" 
+                        class="w-64 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        value="{{ request('search') }}" />
+                    <button type="submit" class="absolute right-3 top-2.5 text-gray-400">
+                        <i data-feather="search"></i>
+                    </button>
+                </form>
             </div>
-          </div>
+        </div>
           
           <div class="flex items-center space-x-4">
-            <button class="text-gray-600 hover:text-gray-800">
-              <i data-feather="bell"></i>
-            </button>
-            <button class="text-gray-600 hover:text-gray-800">
+            <a id="infoApp" class="text-gray-600 hover:text-gray-800">
               <i data-feather="help-circle"></i>
-            </button>
+            </a>
+            <a id="logoutButton" class="text-gray-600 hover:text-gray-800">
+              <i data-feather="log-out"></i>
+            </a>
           </div>
         </div>
       </header>
@@ -272,7 +282,7 @@
             
             </div>
           </div>
-          
+           
           <!-- Devices List -->
           <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
             <div class="p-4 border-b border-gray-200 flex flex-wrap justify-between items-center">
@@ -419,5 +429,63 @@
       }
     });
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.getElementById('infoApp').addEventListener('click', function () {
+      Swal.fire({
+        title: 'Tentang Aplikasi',
+        html: `
+          <strong>Nama Aplikasi:</strong> Sistem Pemantauan IoT<br>
+          <strong>Versi:</strong> 1.0<br>
+          <strong>Dibuat oleh:</strong> Tim Pengembang PBL RPL<br>
+          <strong>Deskripsi:</strong> Aplikasi ini digunakan untuk memantau perangkat IoT secara real-time, 
+          termasuk data suhu, kelembaban, dan status perangkat.
+        `,
+        icon: 'info',
+        confirmButtonText: 'Tutup'
+      });
+    });
+  </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.getElementById('infoApp').addEventListener('click', function () {
+    Swal.fire({
+      title: 'Tentang Aplikasi',
+      html: `
+        <strong>Nama Aplikasi:</strong> Sistem Pemantauan IoT<br>
+        <strong>Versi:</strong> 1.0<br>
+        <strong>Dibuat oleh:</strong> Tim Pengembang PBL RPL<br>
+        <strong>Deskripsi:</strong> Aplikasi ini digunakan untuk memantau perangkat IoT secara real-time, 
+        termasuk data suhu, kelembaban, dan status perangkat.
+      `,
+      icon: 'info',
+      confirmButtonText: 'Tutup'
+    });
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.getElementById('logoutButton').addEventListener('click', function (e) {
+    e.preventDefault(); // Cegah aksi langsung
+
+    Swal.fire({
+      title: 'Yakin ingin keluar?',
+      text: "Kamu akan keluar dari aplikasi.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya, Logout',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Redirect ke /logout
+        window.location.href = '/logout';
+      }
+    });
+  });
+</script>
+
 </body>
 </html>

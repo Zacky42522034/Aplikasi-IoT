@@ -10,17 +10,18 @@ class DashboardController extends Controller
 {
     public function dashboard()
     {
-        $totalDevices = PairedDevices::count();
-        $devices = PairedDevices::with('latestPairedData')->get();
+        $userId = auth()->id();
+
+        $devices = PairedDevices::with('latestPairedData')
+            ->where('user_id', $userId)
+            ->get();
         
-        // Ambil data terbaru dari PairedData (bukan dari builder PairedDevices)
-        $latestData = \App\Models\PairedData::latest()->first();
-    
-        $data1 = $latestData?->data1;
-        $data2 = $latestData?->data2;
-    
+        $totalDevices = $devices->count();
         $onlineCount = 0;
         $offlineCount = 0;
+    
+        // Array untuk menyimpan data tiap device
+        $deviceData = [];
     
         foreach ($devices as $device) {
             $latest = $device->latestPairedData;
@@ -34,12 +35,21 @@ class DashboardController extends Controller
                 } else {
                     $offlineCount++;
                 }
+    
+                $deviceData[$device->id] = [
+                    'data1' => $latest->data1,
+                    'data2' => $latest->data2,
+                ];
             } else {
                 $offlineCount++;
+                $deviceData[$device->id] = [
+                    'data1' => null,
+                    'data2' => null,
+                ];
             }
         }
     
-        return view('App.Dashboard', compact('totalDevices', 'onlineCount', 'offlineCount', 'devices', 'latestData', 'data1', 'data2'));
+        return view('App.Dashboard', compact('totalDevices', 'onlineCount', 'offlineCount', 'devices', 'deviceData'));
     }
     
 }

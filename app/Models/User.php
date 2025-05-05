@@ -47,4 +47,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function pairedDevices()
+    {
+        return $this->hasMany(PairedDevice::class);
+    }
+    
 }

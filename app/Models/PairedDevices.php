@@ -18,4 +18,10 @@ class PairedDevices extends Model
     {
         return $this->hasOne(PairedData::class, 'paired_device_id')->latest();
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    
 }

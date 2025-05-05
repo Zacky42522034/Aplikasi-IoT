@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login & Register | My Application</title>
@@ -352,5 +353,36 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 </script>
 @endif
+@if(session('logged_out'))
+<script>
+    // Refresh otomatis setelah 1 detik
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+</script>
+@endif
+{{-- sweetalert register --}}
+@if (session('success'))
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Sukses!',
+        text: '{{ session('success') }}',
+        confirmButtonColor: '#3085d6'
+    });
+</script>
+@endif
+
+@if (session('error'))
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Gagal!',
+        text: '{{ session('error') }}',
+        confirmButtonColor: '#d33'
+    });
+</script>
+@endif
+
 </body>
 </html>

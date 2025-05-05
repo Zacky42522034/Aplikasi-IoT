@@ -10,6 +10,19 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+    public function login(){
+        return view('auth.login');
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::logout(); // Hapus autentikasi
+        $request->session()->invalidate(); // Hapus semua session
+        $request->session()->regenerateToken(); // Regenerate CSRF token baru
+    
+        return redirect('/login')->with('logged_out', true);
+    }
+
     public function postLog(Request $request){
         $validated = $request->validate([
             'email' => 'required|email',
@@ -39,7 +52,7 @@ class AuthController extends Controller
     
         // Jika pendaftaran berhasil
         if ($user) {
-            return redirect("/")->with('success', 'Registrasi berhasil, silakan login.');
+            return redirect("/login")->with('success', 'Registrasi berhasil, silakan login.');
         } else {
             return back()->with('error', 'Registrasi gagal, coba lagi.');
         }
